@@ -4,7 +4,7 @@
 **Professor:** Adam Smith Gontijo  
 **Turma:** B — Ciências Políticas (Relações Internacionais e Exteriores)  
 **Grupo:** Arthur Murillo Brito · Arthur Escorcio Alves · Arthur Andre Beraldo Santos · Alberto Holanda · Gabriel Porto  
-**Data:** Junho / 2025
+**Data:** Junho / 2026
 
 ---
 
