@@ -10,14 +10,16 @@
 ## Instalação
 
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
 ## Execução
 
 ```bash
-python app.py
-# Acesse: http://localhost:5001
+python manage.py runserver
+# Acesse: http://localhost:8000
 ```
 
 ## Testes
@@ -31,19 +33,32 @@ pytest tests/ -v
 
 ```
 geomonitor/
-├── app.py                 # Servidor Flask
+├── manage.py              # Entrada Django
 ├── requirements.txt
-├── data/noticias.csv      # Dataset
-├── geomonitor/
+├── pytest.ini
+├── config/                # Configurações Django
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+├── monitor/               # App Django (web)
+│   ├── views.py           # Rotas e lógica de exibição
+│   ├── urls.py
+│   ├── apps.py            # Inicialização do pipeline ML
+│   ├── pipeline.py        # Estado global do modelo
+│   └── templates/monitor/
+│       └── index.html     # Dashboard HTML
+├── geomonitor/            # Pacote ML
 │   ├── coletor.py         # Coleta de dados
 │   ├── processador.py     # Limpeza NLP
 │   ├── classificador.py   # ML (Scikit-Learn)
 │   └── visualizador.py    # Gráficos (Matplotlib)
+├── data/
+│   └── noticias.csv       # Dataset
 ├── tests/
 │   └── test_geomonitor.py # 25 testes
 └── docs/
     ├── documentacao_tecnica.md
-    └── roteiro_video.md
+    └── explicacao_do_projeto.md
 ```
 
 ## Bibliotecas principais
@@ -51,6 +66,6 @@ geomonitor/
 | Biblioteca | Função |
 |------------|--------|
 | **Scikit-Learn** | Classificação TF-IDF + Regressão Logística |
-| **Flask** | Dashboard web e API REST |
+| **Django** | Dashboard web e API REST |
 | **Pandas** | Manipulação de dados |
 | **Matplotlib** | Visualizações |

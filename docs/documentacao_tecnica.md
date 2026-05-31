@@ -46,10 +46,10 @@ O volume de notícias internacionais cresce exponencialmente, tornando inviável
 
 - Coleta de notícias via CSV local (com estrutura pronta para NewsAPI)
 - Pipeline NLP: limpeza → vetorização TF-IDF → classificação Logística
-- Dashboard Flask com 4 visualizações Matplotlib
+- Dashboard Django com 4 visualizações Matplotlib
 - Filtros dinâmicos (categoria, data, busca textual)
 - API REST JSON (`/api/noticias`, `/api/metricas`)
-- 25 testes automatizados (pytest)
+- 25 testes automatizados (pytest + pytest-django)
 
 ### Limitações desta versão
 
@@ -67,7 +67,7 @@ O volume de notícias internacionais cresce exponencialmente, tornando inviável
 └────────────────────────────┬─────────────────────────┘
                              │ HTTP GET / query params
 ┌────────────────────────────▼─────────────────────────┐
-│              Flask (app.py)  — Camada Web             │
+│           Django (monitor/views.py) — Camada Web      │
 │   Rotas: /   /api/noticias   /api/metricas            │
 └──────┬────────────────────────────────────┬──────────┘
        │                                    │
@@ -94,8 +94,8 @@ CSV → ColetorNoticias.carregar_csv()
     → Processador.processar()       (limpeza + texto_limpo)
     → Classificador.treinar()       (TF-IDF + LogReg)
     → Classificador.prever_df()     (categoria_predita)
-    → Visualizador.*()              (base64 PNG → template Flask)
-    → render_template_string()      (HTML → Browser)
+    → Visualizador.*()              (base64 PNG → template Django)
+    → render(request, template)     (HTML → Browser)
 ```
 
 ---
@@ -167,7 +167,29 @@ Tema escuro (#0D1B2A) consistente com a identidade visual GeoMonitor.
 
 ---
 
-### 5.5 `app.py` — Aplicação Flask
+### 5.5 Camada Web Django
+
+O projeto usa Django como framework web, organizado em dois diretórios:
+
+**`config/`** — Configurações do projeto Django:
+
+| Arquivo | Função |
+|---------|--------|
+| `settings.py` | Configurações gerais (apps, templates, timezone) |
+| `urls.py` | Roteamento raiz — delega para `monitor.urls` |
+| `wsgi.py` | Ponto de entrada para servidores de produção |
+
+**`monitor/`** — App Django principal:
+
+| Arquivo | Função |
+|---------|--------|
+| `apps.py` | `MonitorConfig.ready()` — inicializa o pipeline ML na subida do servidor |
+| `pipeline.py` | Armazena `df_final` e `classificador` como estado global |
+| `views.py` | Lógica das três rotas (index, api_noticias, api_metricas) |
+| `urls.py` | Mapeamento URL → view |
+| `templates/monitor/index.html` | Dashboard HTML com tema escuro |
+
+**Rotas disponíveis:**
 
 | Rota | Método | Descrição |
 |------|--------|-----------|
@@ -210,11 +232,12 @@ Tema escuro (#0D1B2A) consistente com a identidade visual GeoMonitor.
 | Biblioteca | Versão mínima | Papel |
 |------------|--------------|-------|
 | **Scikit-Learn** | 1.4 | Biblioteca **principal** — TF-IDF + Classificação |
-| **Flask** | 3.0 | Framework web (servidor e rotas) |
+| **Django** | 5.0 | Framework web (servidor, rotas e templates) |
 | **Pandas** | 2.1 | Manipulação de DataFrames |
 | **Matplotlib** | 3.8 | Visualizações embutidas no dashboard |
 | **NumPy** | 1.26 | Operações numéricas (dependência do pipeline ML) |
 | **pytest** | 8.0 | Framework de testes |
+| **pytest-django** | 4.8 | Integração pytest com Django |
 
 ---
 
@@ -226,7 +249,7 @@ Tema escuro (#0D1B2A) consistente com a identidade visual GeoMonitor.
 |--------|---------|-----------|
 | 1 | Semana 1–2 | Levantamento, escopo, arquitetura, protótipo |
 | 2 | Semana 3–4 | Módulos coletor, processador, classificador |
-| 3 | Semana 5–6 | Dashboard Flask, testes, documentação, vídeo |
+| 3 | Semana 5–6 | Dashboard Django, testes, documentação, vídeo |
 
 **Versionamento:** Git com branches `main` / `dev` / `feature/*`.
 
@@ -248,8 +271,8 @@ Tema escuro (#0D1B2A) consistente com a identidade visual GeoMonitor.
 |-------|---------|
 | test_pipeline_completo | DataFrame com `categoria_predita` ao fim do pipeline |
 | test_filtro_por_categoria | Filtragem devolve apenas categoria solicitada |
-| test_api_flask_noticias | Endpoint `/api/noticias` retorna JSON não-vazio |
-| test_api_flask_metricas | Endpoint `/api/metricas` retorna dict de métricas |
+| test_api_noticias | Endpoint `/api/noticias` retorna JSON não-vazio |
+| test_api_metricas | Endpoint `/api/metricas` retorna dict de métricas |
 | test_pagina_principal_carrega | HTTP 200 + conteúdo "GeoMonitor" |
 | test_privacidade_sem_dados_sensiveis | Dataset sem CPF, e-mail, senha etc. |
 
@@ -275,19 +298,31 @@ Tema escuro (#0D1B2A) consistente com a identidade visual GeoMonitor.
 
 ```
 geomonitor/
-├── app.py                    # Aplicação Flask principal
+├── manage.py                 # Entrada Django (substitui app.py)
 ├── requirements.txt          # Dependências Python
-├── data/
-│   ├── noticias.csv          # Dataset local (24 notícias rotuladas)
-│   └── modelo.pkl            # Modelo treinado (gerado em runtime)
-├── geomonitor/
+├── pytest.ini                # Configuração pytest-django
+├── config/                   # Configurações do projeto Django
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+├── monitor/                  # App Django principal
+│   ├── apps.py               # Inicializa pipeline ML via AppConfig.ready()
+│   ├── pipeline.py           # Estado global (df_final, classificador)
+│   ├── views.py              # Views das 3 rotas
+│   ├── urls.py               # Mapeamento URL → view
+│   └── templates/monitor/
+│       └── index.html        # Dashboard HTML
+├── geomonitor/               # Pacote ML (independente do framework)
 │   ├── __init__.py
 │   ├── coletor.py            # Módulo de coleta
 │   ├── processador.py        # Módulo de limpeza NLP
 │   ├── classificador.py      # Módulo ML (Scikit-Learn)
 │   └── visualizador.py       # Módulo de gráficos (Matplotlib)
+├── data/
+│   ├── noticias.csv          # Dataset local (24 notícias rotuladas)
+│   └── modelo.pkl            # Modelo treinado (gerado em runtime)
 └── tests/
-    └── test_geomonitor.py    # 25 testes (pytest)
+    └── test_geomonitor.py    # 25 testes (pytest + pytest-django)
 ```
 
 ---
@@ -295,14 +330,19 @@ geomonitor/
 ## 12. Como Executar
 
 ```bash
-# 1. Instalar dependências
+# 1. Criar ambiente virtual e instalar dependências
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 
-# 2. Executar o servidor
-python app.py
-# → http://localhost:5001
+# 2. Verificar configuração Django
+python manage.py check
 
-# 3. Executar os testes
+# 3. Executar o servidor
+python manage.py runserver
+# → http://localhost:8000
+
+# 4. Executar os testes
 pytest tests/ -v
 ```
 
@@ -313,6 +353,6 @@ pytest tests/ -v
 - Integração em tempo real com NewsAPI
 - Análise de sentimento por notícia
 - Exportação de relatórios em PDF
-- Autenticação de usuários
+- Autenticação de usuários (Django Auth)
 - Deploy em nuvem (Railway / Render)
 - Expansão do dataset e melhora do modelo (BERT/DistilBERT)
