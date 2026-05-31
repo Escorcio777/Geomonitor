@@ -195,45 +195,39 @@ class TestAceitacao:
         filtrado = df[df["categoria_predita"] == "conflito"]
         assert (filtrado["categoria_predita"] == "conflito").all()
 
-    def test_api_flask_noticias(self):
+    def test_api_noticias(self):
         """Endpoint /api/noticias deve retornar JSON com lista de notícias."""
-        import sys, os
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-        from app import app as flask_app
-        client = flask_app.test_client()
+        from django.test import Client
+        client = Client()
         resp = client.get("/api/noticias")
         assert resp.status_code == 200
-        data = resp.get_json()
+        import json
+        data = json.loads(resp.content)
         assert isinstance(data, list)
         assert len(data) > 0
 
-    def test_api_flask_metricas(self):
+    def test_api_metricas(self):
         """Endpoint /api/metricas deve retornar dicionário de métricas."""
-        import sys, os
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-        from app import app as flask_app
-        client = flask_app.test_client()
+        from django.test import Client
+        import json
+        client = Client()
         resp = client.get("/api/metricas")
         assert resp.status_code == 200
-        data = resp.get_json()
+        data = json.loads(resp.content)
         assert isinstance(data, dict)
 
     def test_pagina_principal_carrega(self):
         """Página principal deve responder com status 200."""
-        import sys, os
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-        from app import app as flask_app
-        client = flask_app.test_client()
+        from django.test import Client
+        client = Client()
         resp = client.get("/")
         assert resp.status_code == 200
-        assert b"GeoMonitor" in resp.data
+        assert b"GeoMonitor" in resp.content
 
     def test_filtro_via_querystring(self):
         """Filtro por categoria via query string deve funcionar."""
-        import sys, os
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-        from app import app as flask_app
-        client = flask_app.test_client()
+        from django.test import Client
+        client = Client()
         resp = client.get("/?cat=conflito")
         assert resp.status_code == 200
 
